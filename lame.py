@@ -5,9 +5,17 @@ from pathlib import Path
 import os
 import subprocess
 
+# #############################################
+#   Configurations
+# #############################################
 # Where we look for FLAC files
 flac_watchfolder = '/share2/Audio/flac_to_mp3/'
 output_folder = '/share2/Audio/mp3/'
+
+# Overdrive if file exists?
+overdrive_existing_file = False
+# #############################################
+
 
 print("****************************************")
 print(" FLAC to MP3 conversion")
@@ -32,6 +40,11 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
 
     # Make the path if it does not exists
     Path(mp3_output_folder).mkdir(parents=True, exist_ok=True)
+
+    # If we don't want to override files, we must check if file exists already
+    if overdrive_existing_file == False and Path(mp3_file).exists():
+        print ("File " + mp3_file + " exists! Skipping this file generation..." + '\n\n')
+        continue
 
     # Decode FLAC and pass it to LAME
     command = "flac --decode --stdout " + str(flac_filename) + " | lame --preset extreme - " + str(mp3_file)
