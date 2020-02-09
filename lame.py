@@ -60,6 +60,7 @@ def infoScreen():
 
 def checkWatchfolder():    
     for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
+        logging.info("Input FLAC file: " + str(flac_filename))
         # Filename without path and extension
         base_filename = os.path.basename(os.path.splitext(flac_filename)[0])        
 
@@ -74,7 +75,7 @@ def checkWatchfolder():
 
         # If we don't want to override files, we must check if file exists already
         if overdrive_existing_file == False and Path(mp3_file).exists():
-            logging.warn("File exists. Not overwriting since overdrive_existing_file is False.")            
+            logging.warn("File " + mp3_file  + " exists. Not overwriting since overdrive_existing_file is False.")            
             continue
 
         # Where to store temporary coverart
