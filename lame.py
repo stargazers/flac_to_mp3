@@ -31,7 +31,7 @@ def getMetadata( flac ):
     for val in metadata_to_keep:
         command = command + ' --show-tag="' + val + '"'
     
-    print ("Getting metadata with command: " + command)
+    command = command + ' --export-picture-to=' + os.path.dirname(flac) + '/temporary_coverart.jpg '    
     ret = subprocess.run([command], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
     output = ret.stdout
@@ -56,6 +56,8 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     dirname = os.path.dirname(flac_filename) + '/'
     flac_subfolder = dirname.replace(flac_watchfolder, '')    
     mp3_output_folder = output_folder + flac_subfolder
+
+    coverart_file = dirname + 'temporary_coverart.jpg'
     
     # Actual filename (with path) for mp3 file
     mp3_file = mp3_output_folder + base_filename + '.mp3'
@@ -68,7 +70,8 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
                             + ' --ta "' + metadata['ARTIST'] + '"' \
                             + ' --tl "' + metadata['ALBUM'] + '"' \
                             + ' --ty "' + metadata['DATE'] + '"' \
-                            + ' --tn "' + metadata['TRACKNUMBER'] + '"'
+                            + ' --tn "' + metadata['TRACKNUMBER'] + '"' \
+                            + ' --ti "' + coverart_file + '"'
     lame_params = '--preset extreme ' + lame_metadata_params
 
     print ('Lame would be ')
@@ -89,5 +92,9 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     # Decode FLAC and pass it to LAME
     command = "flac --decode --stdout " + str(flac_filename) + " | lame " + lame_params + " - " + str(mp3_file)
     print("Executing command: " + command)    
-    subprocess.run([command], shell=True)    
+    subprocess.run([command], shell=True)
+    
+    # Delete temporary cover art file
+    os.remove(coverart_file)
+    
     print('\n' * 3)
