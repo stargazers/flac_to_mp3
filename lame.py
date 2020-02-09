@@ -48,59 +48,67 @@ def getMetadata( flac ):
 
 
 
-print("****************************************")
-print(" FLAC to MP3 conversion")
-print("****************************************")
-print()
-
-for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
-    # Filename without path and extension
-    base_filename = os.path.basename(os.path.splitext(flac_filename)[0])
-
-    # Get subfolder structure when generate mp3 files to new path
-    dirname = os.path.dirname(flac_filename) + '/'
-    flac_subfolder = dirname.replace(flac_watchfolder, '')    
-    mp3_output_folder = output_folder + flac_subfolder
-
-    coverart_file = dirname + 'temporary_coverart.jpg'
-    
-    # Actual filename (with path) for mp3 file
-    mp3_file = mp3_output_folder + base_filename + '.mp3'
-
-    # If we don't want to override files, we must check if file exists already
-    if overdrive_existing_file == False and Path(mp3_file).exists():
-        print ("File " + mp3_file + " exists! Skipping this file generation..." + '\n\n')
-        continue
-
-    # Read metadata fields
-    metadata = getMetadata(flac_filename)
-    
-    # Create metadata parameter for LAME
-    lame_metadata_params = '--tt "' + metadata['TITLE'] + '"' \
-                            + ' --ta "' + metadata['ARTIST'] + '"' \
-                            + ' --tl "' + metadata['ALBUM'] + '"' \
-                            + ' --ty "' + metadata['DATE'] + '"' \
-                            + ' --tn "' + metadata['TRACKNUMBER'] + '"' \
-                            + ' --ti "' + coverart_file + '"'
-    lame_params = '--preset extreme ' + lame_metadata_params
-
-    print ('Lame would be ')
-    print(lame_metadata_params)
-    
-    print("Input FLAC file: " + str(flac_filename))
-    print("Output MP3 file: " + str(mp3_file))
+def infoScreen():
+    print("****************************************")
+    print(" FLAC to MP3 conversion")
+    print("****************************************")
     print()
 
-    # Make the path if it does not exists
-    Path(mp3_output_folder).mkdir(parents=True, exist_ok=True)
 
-    # Decode FLAC and pass it to LAME
-    command = "flac --decode --stdout \"" + str(flac_filename) + "\" | lame " + lame_params + " - \"" + str(mp3_file) + "\""
-    print("Executing command: " + command)    
-    subprocess.run([command], shell=True)
-    
-    # Delete temporary cover art file
-    print("Coverart file is " + coverart_file)
-    os.remove(coverart_file)
-    
-    print('\n' * 3)
+
+def checkWatchfolder():    
+    for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
+        # Filename without path and extension
+        base_filename = os.path.basename(os.path.splitext(flac_filename)[0])
+
+        # Get subfolder structure when generate mp3 files to new path
+        dirname = os.path.dirname(flac_filename) + '/'
+        flac_subfolder = dirname.replace(flac_watchfolder, '')    
+        mp3_output_folder = output_folder + flac_subfolder
+
+        coverart_file = dirname + 'temporary_coverart.jpg'
+        
+        # Actual filename (with path) for mp3 file
+        mp3_file = mp3_output_folder + base_filename + '.mp3'
+
+        # If we don't want to override files, we must check if file exists already
+        if overdrive_existing_file == False and Path(mp3_file).exists():
+            print ("File " + mp3_file + " exists! Skipping this file generation..." + '\n\n')
+            continue
+
+        # Read metadata fields
+        metadata = getMetadata(flac_filename)
+        
+        # Create metadata parameter for LAME
+        lame_metadata_params = '--tt "' + metadata['TITLE'] + '"' \
+                                + ' --ta "' + metadata['ARTIST'] + '"' \
+                                + ' --tl "' + metadata['ALBUM'] + '"' \
+                                + ' --ty "' + metadata['DATE'] + '"' \
+                                + ' --tn "' + metadata['TRACKNUMBER'] + '"' \
+                                + ' --ti "' + coverart_file + '"'
+        lame_params = '--preset extreme ' + lame_metadata_params
+
+        print ('Lame would be ')
+        print(lame_metadata_params)
+        
+        print("Input FLAC file: " + str(flac_filename))
+        print("Output MP3 file: " + str(mp3_file))
+        print()
+
+        # Make the path if it does not exists
+        Path(mp3_output_folder).mkdir(parents=True, exist_ok=True)
+
+        # Decode FLAC and pass it to LAME
+        command = "flac --decode --stdout \"" + str(flac_filename) + "\" | lame " + lame_params + " - \"" + str(mp3_file) + "\""
+        print("Executing command: " + command)    
+        subprocess.run([command], shell=True)
+        
+        # Delete temporary cover art file
+        print("Coverart file is " + coverart_file)
+        os.remove(coverart_file)
+        
+        print('\n' * 3)
+
+
+infoScreen()
+checkWatchfolder()
