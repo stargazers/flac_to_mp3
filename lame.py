@@ -3,6 +3,7 @@
 # #####################################
 from pathlib import Path
 import os
+import re
 import subprocess
 
 # #############################################
@@ -14,7 +15,32 @@ output_folder = '/share2/Audio/mp3/'
 
 # Overdrive if file exists?
 overdrive_existing_file = False
+
+# Metadata what we want to keep
+metadata_to_keep = ['Artist', 'Album', 'Title', 'Genre', 'Tracknumber', 'Date']
 # #############################################
+
+# ####################################
+#   getMetadata
+#   @param flac Flac filename
+#   @return Dictionary
+# ####################################
+def getMetadata( flac ):    
+    command = 'metaflac ' + str(flac)
+    
+    for val in metadata_to_keep:
+        command = command + ' --show-tag="' + val + '"'
+    
+    print ("Getting metadata with command: " + command)
+    ret = subprocess.run([command], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
+
+    output = ret.stdout
+    output = re.split('\n|=', output)
+    values = list(filter(None, output))
+    metadata = dict(zip(values[::2], values[1::2]))
+    print ("Metadata we got: " + str(metadata))
+    return metadata
+
 
 
 print("****************************************")
@@ -34,6 +60,9 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     # Actual filename (with path) for mp3 file
     mp3_file = mp3_output_folder + base_filename + '.mp3'
 
+    # Read metadata fields
+    metadata = getMetadata(flac_filename)
+    
     print("Input FLAC file: " + str(flac_filename))
     print("Output MP3 file: " + str(mp3_file))
     print()
@@ -49,5 +78,5 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     # Decode FLAC and pass it to LAME
     command = "flac --decode --stdout " + str(flac_filename) + " | lame --preset extreme - " + str(mp3_file)
     print("Executing command: " + command)    
-    subprocess.run([command], shell=True)    
+    #subprocess.run([command], shell=True)    
     print('\n' * 3)
