@@ -63,6 +63,17 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     # Read metadata fields
     metadata = getMetadata(flac_filename)
     
+    # Create metadata parameter for LAME
+    lame_metadata_params = '--tt "' + metadata['TITLE'] + '"' \
+                            + ' --ta "' + metadata['ARTIST'] + '"' \
+                            + ' --tl "' + metadata['ALBUM'] + '"' \
+                            + ' --ty "' + metadata['DATE'] + '"' \
+                            + ' --tn "' + metadata['TRACKNUMBER'] + '"'
+    lame_params = '--preset extreme ' + lame_metadata_params
+
+    print ('Lame would be ')
+    print(lame_metadata_params)
+    
     print("Input FLAC file: " + str(flac_filename))
     print("Output MP3 file: " + str(mp3_file))
     print()
@@ -76,7 +87,7 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
         continue
 
     # Decode FLAC and pass it to LAME
-    command = "flac --decode --stdout " + str(flac_filename) + " | lame --preset extreme - " + str(mp3_file)
+    command = "flac --decode --stdout " + str(flac_filename) + " | lame " + lame_params + " - " + str(mp3_file)
     print("Executing command: " + command)    
-    #subprocess.run([command], shell=True)    
+    subprocess.run([command], shell=True)    
     print('\n' * 3)
