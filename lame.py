@@ -20,24 +20,29 @@ overdrive_existing_file = False
 metadata_to_keep = ['Artist', 'Album', 'Title', 'Genre', 'Tracknumber', 'Date']
 # #############################################
 
+
+   
 # ####################################
 #   getMetadata
 #   @param flac Flac filename
 #   @return Dictionary
 # ####################################
 def getMetadata( flac ):    
-    command = 'metaflac ' + str(flac)
+    print( "******* FILE: " + str(flac))
+    command = 'metaflac "' + str(flac) + "\""
     
     for val in metadata_to_keep:
         command = command + ' --show-tag="' + val + '"'
     
     command = command + ' --export-picture-to=' + os.path.dirname(flac) + '/temporary_coverart.jpg '    
+    print ("Running command for metadata : " + command)
     ret = subprocess.run([command], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
     output = ret.stdout
     output = re.split('\n|=', output)
     values = list(filter(None, output))
     metadata = dict(zip(values[::2], values[1::2]))
+    
     print ("Metadata we got: " + str(metadata))
     return metadata
 
@@ -62,6 +67,11 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     # Actual filename (with path) for mp3 file
     mp3_file = mp3_output_folder + base_filename + '.mp3'
 
+    # If we don't want to override files, we must check if file exists already
+    if overdrive_existing_file == False and Path(mp3_file).exists():
+        print ("File " + mp3_file + " exists! Skipping this file generation..." + '\n\n')
+        continue
+
     # Read metadata fields
     metadata = getMetadata(flac_filename)
     
@@ -84,17 +94,13 @@ for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
     # Make the path if it does not exists
     Path(mp3_output_folder).mkdir(parents=True, exist_ok=True)
 
-    # If we don't want to override files, we must check if file exists already
-    if overdrive_existing_file == False and Path(mp3_file).exists():
-        print ("File " + mp3_file + " exists! Skipping this file generation..." + '\n\n')
-        continue
-
     # Decode FLAC and pass it to LAME
-    command = "flac --decode --stdout " + str(flac_filename) + " | lame " + lame_params + " - " + str(mp3_file)
+    command = "flac --decode --stdout \"" + str(flac_filename) + "\" | lame " + lame_params + " - \"" + str(mp3_file) + "\""
     print("Executing command: " + command)    
     subprocess.run([command], shell=True)
     
     # Delete temporary cover art file
+    print("Coverart file is " + coverart_file)
     os.remove(coverart_file)
     
     print('\n' * 3)
