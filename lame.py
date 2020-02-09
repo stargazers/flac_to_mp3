@@ -5,11 +5,14 @@ from pathlib import Path
 import os
 import re
 import subprocess
+import logging
 
 # #############################################
 #   Configurations
 # #############################################
-# Where we look for FLAC files
+# Logging level
+logging.basicConfig(level=logging.INFO)
+
 flac_watchfolder = '/share2/Audio/flac_to_mp3/'
 output_folder = '/share2/Audio/mp3/'
 
@@ -28,14 +31,14 @@ metadata_to_keep = ['Artist', 'Album', 'Title', 'Genre', 'Tracknumber', 'Date']
 #   @return Dictionary
 # ####################################
 def getMetadata( flac ):    
-    print( "******* FILE: " + str(flac))
+    logging.info("Reading FLAC metadata from  " + str(flac))    
     command = 'metaflac "' + str(flac) + "\""
     
     for val in metadata_to_keep:
         command = command + ' --show-tag="' + val + '"'
     
     command = command + ' --export-picture-to=' + os.path.dirname(flac) + '/temporary_coverart.jpg '    
-    print ("Running command for metadata : " + command)
+    logging.info("Command to fetch metadata: " + command)    
     ret = subprocess.run([command], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
     output = ret.stdout
@@ -43,39 +46,41 @@ def getMetadata( flac ):
     values = list(filter(None, output))
     metadata = dict(zip(values[::2], values[1::2]))
     
-    print ("Metadata we got: " + str(metadata))
+    logging.info("Metadata we got: " + str(metadata))    
     return metadata
 
 
 
 def infoScreen():
-    print("****************************************")
-    print(" FLAC to MP3 conversion")
-    print("****************************************")
-    print()
+    logging.info("****************************************")
+    logging.info(" FLAC to MP3 conversion")
+    logging.info("****************************************")    
 
 
 
 def checkWatchfolder():    
     for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
         # Filename without path and extension
-        base_filename = os.path.basename(os.path.splitext(flac_filename)[0])
+        base_filename = os.path.basename(os.path.splitext(flac_filename)[0])        
 
         # Get subfolder structure when generate mp3 files to new path
         dirname = os.path.dirname(flac_filename) + '/'
         flac_subfolder = dirname.replace(flac_watchfolder, '')    
         mp3_output_folder = output_folder + flac_subfolder
 
-        coverart_file = dirname + 'temporary_coverart.jpg'
-        
         # Actual filename (with path) for mp3 file
-        mp3_file = mp3_output_folder + base_filename + '.mp3'
+        mp3_file = mp3_output_folder + base_filename + '.mp3'        
+        logging.info("mp3 file to generate: " + mp3_file)
 
         # If we don't want to override files, we must check if file exists already
         if overdrive_existing_file == False and Path(mp3_file).exists():
-            print ("File " + mp3_file + " exists! Skipping this file generation..." + '\n\n')
+            logging.warn("File exists. Not overwriting since overdrive_existing_file is False.")            
             continue
 
+        # Where to store temporary coverart
+        coverart_file = dirname + 'temporary_coverart.jpg'
+        logging.info("coverart file to generate: " + coverart_file)
+        
         # Read metadata fields
         metadata = getMetadata(flac_filename)
         
@@ -87,28 +92,19 @@ def checkWatchfolder():
                                 + ' --tn "' + metadata['TRACKNUMBER'] + '"' \
                                 + ' --ti "' + coverart_file + '"'
         lame_params = '--preset extreme ' + lame_metadata_params
-
-        print ('Lame would be ')
-        print(lame_metadata_params)
-        
-        print("Input FLAC file: " + str(flac_filename))
-        print("Output MP3 file: " + str(mp3_file))
-        print()
-
+        logging.info("LAME parameters will be: " + lame_params)
+                
         # Make the path if it does not exists
         Path(mp3_output_folder).mkdir(parents=True, exist_ok=True)
 
         # Decode FLAC and pass it to LAME
         command = "flac --decode --stdout \"" + str(flac_filename) + "\" | lame " + lame_params + " - \"" + str(mp3_file) + "\""
-        print("Executing command: " + command)    
+        logging.info("Generating mp3 with LAME from FLAC with this command: " + command)        
         subprocess.run([command], shell=True)
         
         # Delete temporary cover art file
-        print("Coverart file is " + coverart_file)
-        os.remove(coverart_file)
-        
-        print('\n' * 3)
-
+        logging.info("Deleting coverart file: " + coverart_file)
+        os.remove(coverart_file)                
 
 infoScreen()
 checkWatchfolder()
