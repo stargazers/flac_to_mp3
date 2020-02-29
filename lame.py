@@ -20,7 +20,7 @@ output_folder = '/share2/Audio/mp3/'
 overdrive_existing_file = False
 
 # Metadata what we want to keep
-metadata_to_keep = ['Artist', 'Album', 'Title', 'Genre', 'Tracknumber', 'Date']
+metadata_to_keep = ['ARTIST', 'ALBUM', 'TITLE', 'GENRE', 'TRACKNUMBER', 'DATE']
 # #############################################
 
 
@@ -45,6 +45,11 @@ def getMetadata( flac ):
     output = re.split('\n|=', output)
     values = list(filter(None, output))
     metadata = dict(zip(values[::2], values[1::2]))
+
+    # Be sure we have all required metadata values set
+    for val in metadata_to_keep:
+        if "val" not in metadata:
+            metadata[val] = ""
     
     logging.info("Metadata we got: " + str(metadata))    
     return metadata
