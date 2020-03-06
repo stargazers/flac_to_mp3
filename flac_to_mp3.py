@@ -55,10 +55,10 @@ def getMetadata( flac ):
     output = re.split('\n|=', output)
     values = list(filter(None, output))
     metadata = dict(zip(values[::2], values[1::2]))
-
+    
     # Be sure we have all required metadata values set
     for val in metadata_to_keep:
-        if "val" not in metadata:
+        if val not in metadata:
             metadata[val] = ""
     
     logging.info("Metadata we got: " + str(metadata))    
@@ -105,8 +105,16 @@ def checkWatchfolder():
                                 + ' --ta "' + metadata['ARTIST'] + '"' \
                                 + ' --tl "' + metadata['ALBUM'] + '"' \
                                 + ' --ty "' + metadata['DATE'] + '"' \
-                                + ' --tn "' + metadata['TRACKNUMBER'] + '"' \
-                                + ' --ti "' + coverart_file + '"'
+                                + ' --tn "' + metadata['TRACKNUMBER'] + '"'
+        
+        # Is there cover art file?
+        #if Path(coverart_file).exists:                       
+        if os.path.exists(coverart_file):
+            logging.info("Cover art file found in path " + coverart_file)
+            lame_metadata_params += ' --ti "' + coverart_file + '"'            
+        else:
+            logging.info("Cover art file was no tfound, ignoring it.")
+
         lame_params = '--preset extreme ' + lame_metadata_params
         logging.info("LAME parameters will be: " + lame_params)
                 
@@ -119,8 +127,9 @@ def checkWatchfolder():
         subprocess.run([command], shell=True)
         
         # Delete temporary cover art file
-        logging.info("Deleting coverart file: " + coverart_file)
-        os.remove(coverart_file)                
+        if os.path.exists(coverart_file):
+            logging.info("Deleting coverart file: " + coverart_file)
+            os.remove(coverart_file)                
 
 infoScreen()
 checkWatchfolder()
