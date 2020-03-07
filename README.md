@@ -6,6 +6,8 @@ This script search FLAC files from given directory and convert those to mp3. Mos
 
 Paths can be configured directly to the script or use environment variables (see below for example).
 
+By default we use LAME preset extreme.
+
 ## Requirements
 
 Command line tools:
@@ -17,8 +19,13 @@ Command line tools:
 This app supports environment variables:
 
 * FLAC_WATCHFOLDER
+    * Path where we search for FLAC files
 * MP3_OUTPUT_FOLDER
+    * Path where we encode mp3 files
+* LAME_PRESET
+    * What LAME preset we want to use. If not given "extreme" is used.
 
 ## Usage with environment variables
 
-```FLAC_WATCHFOLDER=/home/stargazers/flac/ MP3_OUTPUT_FOLDER=/home/stargazers/mp3/ python3 flac_to_mp3.py```
+```FLAC_WATCHFOLDER=/home/stargazers/flac/ MP3_OUTPUT_FOLDER=/home/stargazers/mp3/ LAME_PRESET=standard python3 flac_to_mp3.py```
+
