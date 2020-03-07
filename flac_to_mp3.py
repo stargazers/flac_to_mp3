@@ -17,6 +17,9 @@ logging.basicConfig(level=logging.INFO)
 flac_watchfolder = '/share2/Audio/flac_to_mp3/'
 output_folder = '/share2/Audio/mp3/'
 
+# Preset for LAME. Can be overridden with LAME_PRESET environment variable.
+lame_preset = 'extreme'
+
 # Use env variables if exists
 if os.environ.get('FLAC_WATCHFOLDER'):
     flac_watchfolder = os.environ['FLAC_WATCHFOLDER']
@@ -25,6 +28,10 @@ if os.environ.get('FLAC_WATCHFOLDER'):
 if os.environ.get('MP3_OUTPUT_FOLDER'):
     output_folder = os.environ['MP3_OUTPUT_FOLDER']
     logging.info("Found ENV variable MP3_OUTPUT_FOLDER, using that. Value was " + output_folder)
+
+if os.environ.get('LAME_PRESET'):
+    lame_preset = os.environ['LAME_PRESET']
+    logging.info("Found ENV variable LAME_PRESET, using that. Value was " + lame_preset)
 
 # Overdrive if file exists?
 overdrive_existing_file = False
@@ -115,7 +122,7 @@ def checkWatchfolder():
         else:
             logging.info("Cover art file was no tfound, ignoring it.")
 
-        lame_params = '--preset extreme ' + lame_metadata_params
+        lame_params = '--preset ' + lame_preset + ' ' + lame_metadata_params
         logging.info("LAME parameters will be: " + lame_params)
                 
         # Make the path if it does not exists
