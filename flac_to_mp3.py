@@ -54,7 +54,7 @@ def getMetadata( flac ):
     for val in metadata_to_keep:
         command = command + ' --show-tag="' + val + '"'
     
-    command = command + ' --export-picture-to=' + os.path.dirname(flac) + '/temporary_coverart.jpg '    
+    command = command + ' --export-picture-to="' + os.path.dirname(flac) + '/temporary_coverart.jpg" '    
     logging.info("Command to fetch metadata: " + command)    
     ret = subprocess.run([command], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
