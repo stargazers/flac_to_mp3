@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import logging
+import shutil
 
 # #############################################
 #   Configurations
@@ -19,6 +20,12 @@ output_folder = '/share2/Audio/mp3/'
 
 # By default we want to convert files
 test_run = False
+
+# If there is album art in FLAC folder, we should use it by default if cover art is not in FLAC metadata
+use_cover_jpg = True
+
+# What is the album art filename what we are looking for if there is no album art in FLAC file?
+default_album_art_filename = "cover-480x480.jpg"
 
 # Preset for LAME. Can be overridden with LAME_PRESET environment variable.
 lame_preset = 'extreme'
@@ -39,6 +46,14 @@ if os.environ.get('LAME_PRESET'):
 if os.environ.get('TEST_RUN'):
     test_run = True
     logging.info("Found ENV variable TEST_RUN, using that. We do not actually convert FLAC to Mp3, just show debugging informations.")
+
+if os.environ.get('DO_NOT_USE_COVER_JPG'):
+    use_cover_jpg = False
+    logging.info("Found ENV variable DO_NOT_USE_COVER_JPG so we do not use cover.jpg for mp3 files if that is found on FLAC folder.")
+
+if os.environ.get('DEFAULT_ALBUM_ART_FILENAME'):
+    default_album_art_filename = os.environ['DEFAULT_ALBUM_ART_FILENAME']
+    logging.info("Found ENV variable DEFAULT_ALBUM_ART_FILENAME so we will use files named " + default_album_art_filename + " if that is found on FLAC folder.")
 
 # Overdrive if file exists?
 overdrive_existing_file = False
@@ -65,6 +80,28 @@ def getMetadata( flac ):
     logging.info("Command to fetch metadata: " + command)    
     ret = subprocess.run([command], shell=True, stdout=subprocess.PIPE, universal_newlines=True)
 
+    # File to store temporary album cover art file
+    temporary_coverart_file = os.path.dirname(flac) + '/temporary_coverart.jpg'
+
+    # Did we got album art from metadata, is temporary_coverart_file written?
+    if not os.path.exists(temporary_coverart_file):
+        logging.info("We did not get album cover art from metadata.")
+
+        # Since we did not got album art from metadata, is use_cover_jpg True?
+        # If so, we have to check album cover art from FLAC folder using default_album_art_filename variable
+        if use_cover_jpg == True:
+            possible_coverart_file = os.path.dirname(flac) + "/" + default_album_art_filename
+            logging.info("Possible cover art file would be " + possible_coverart_file)
+
+            # If we found that there is album art in file, let's copy the file
+            # to temporary_coverart_file so later we will find it when we want to
+            # embed it to generated mp3 file.
+            if os.path.exists(possible_coverart_file):
+                logging.info("Cover art was found on file " + possible_coverart_file + " so we will use this.")
+                shutil.copyfile(possible_coverart_file, temporary_coverart_file)
+            else:
+                logging.warn("Cover art file was not found so in final Mp3 there is no cover art embedded.")
+
     output = ret.stdout
     output = re.split('\n|=', output)
     values = list(filter(None, output))
@@ -83,8 +120,15 @@ def getMetadata( flac ):
 def infoScreen():
     logging.info("****************************************")
     logging.info(" FLAC to MP3 conversion")
+    logging.info("")
+    logging.info("   Paramters we use on this run:")
+    logging.info("   - FLAC watchfolder: " + flac_watchfolder)
+    logging.info("   - Mp3 output folder: " + output_folder)
+    logging.info("   - Lame preset: " + lame_preset)
+    logging.info("   - Use cover art from JPEG files: " + str(use_cover_jpg))
+    logging.info("   - Default cover art filename: " + default_album_art_filename)
+    logging.info("   - Is this test run: " + str(test_run))
     logging.info("****************************************")    
-
 
 
 def checkWatchfolder():    
@@ -133,7 +177,7 @@ def checkWatchfolder():
             logging.info("Cover art file found in path " + coverart_file)
             lame_metadata_params += ' --ti "' + coverart_file + '"'            
         else:
-            logging.info("Cover art file was no tfound, ignoring it.")
+            logging.info("Cover art file was not found, ignoring it.")
 
         lame_params = '--preset ' + lame_preset + ' ' + lame_metadata_params
         logging.info("LAME parameters will be: " + lame_params)
