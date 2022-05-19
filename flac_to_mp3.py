@@ -17,6 +17,9 @@ logging.basicConfig(level=logging.INFO)
 flac_watchfolder = '/share2/Audio/flac_to_mp3/'
 output_folder = '/share2/Audio/mp3/'
 
+# By default we want to convert files
+test_run = False
+
 # Preset for LAME. Can be overridden with LAME_PRESET environment variable.
 lame_preset = 'extreme'
 
@@ -32,6 +35,10 @@ if os.environ.get('MP3_OUTPUT_FOLDER'):
 if os.environ.get('LAME_PRESET'):
     lame_preset = os.environ['LAME_PRESET']
     logging.info("Found ENV variable LAME_PRESET, using that. Value was " + lame_preset)
+
+if os.environ.get('TEST_RUN'):
+    test_run = True
+    logging.info("Found ENV variable TEST_RUN, using that. We do not actually convert FLAC to Mp3, just show debugging informations.")
 
 # Overdrive if file exists?
 overdrive_existing_file = False
@@ -81,6 +88,9 @@ def infoScreen():
 
 
 def checkWatchfolder():    
+    # List of all files we convert in this run
+    converted_files = []
+
     for flac_filename in Path(flac_watchfolder).rglob('*.flac'):
         logging.info("Input FLAC file: " + str(flac_filename))
         # Filename without path and extension
@@ -99,6 +109,9 @@ def checkWatchfolder():
         if overdrive_existing_file == False and Path(mp3_file).exists():
             logging.warn("File " + mp3_file  + " exists. Not overwriting since overdrive_existing_file is False.")            
             continue
+
+        # Found file to convert - let's add it to converted_files 
+        converted_files.append(mp3_file)
 
         # Where to store temporary coverart
         coverart_file = dirname + 'temporary_coverart.jpg'
@@ -131,12 +144,20 @@ def checkWatchfolder():
         # Decode FLAC and pass it to LAME
         command = "flac --decode --stdout \"" + str(flac_filename) + "\" | lame " + lame_params + " - \"" + str(mp3_file) + "\""
         logging.info("Generating mp3 with LAME from FLAC with this command: " + command)        
-        subprocess.run([command], shell=True)
+
+        # Convert FLAC to mp3 if we are not in test_run mode for debugging purposes
+        if test_run == False:
+            subprocess.run([command], shell=True)
         
         # Delete temporary cover art file
         if os.path.exists(coverart_file):
             logging.info("Deleting coverart file: " + coverart_file)
             os.remove(coverart_file)                
+    
+    # For debugging when we just want to 
+    if test_run == True:
+        print ("In normal run we would be converting these files:")
+        print(converted_files)
 
 infoScreen()
 checkWatchfolder()
